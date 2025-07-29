@@ -26,3 +26,5 @@ C:\Users\jpara\OneDrive\Documentos\GitHub\ProjetoCOD1\obj\Debug\net8.0\refint\Pr
 C:\Users\jpara\OneDrive\Documentos\GitHub\ProjetoCOD1\obj\Debug\net8.0\ProjetoCOD1.pdb
 C:\Users\jpara\OneDrive\Documentos\GitHub\ProjetoCOD1\obj\Debug\net8.0\ProjetoCOD1.genruntimeconfig.cache
 C:\Users\jpara\OneDrive\Documentos\GitHub\ProjetoCOD1\obj\Debug\net8.0\ref\ProjetoCOD1.dll
+C:\Users\jpara\OneDrive\Documentos\GitHub\ProjetoCOD1\obj\Debug\net8.0\ProjetoCOD1.sourcelink.json
+C:\Users\jpara\OneDrive\Documentos\GitHub\ProjetoCOD1\bin\Debug\net8.0\System.Windows.Forms.dll
