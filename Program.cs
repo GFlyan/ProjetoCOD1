@@ -15,25 +15,28 @@ class Program
     private static Point fixedCursorPosition;
     private static SimpleGlobalHook hook;
 
-    // Mouse para analógico direito
     private static double smoothRightX = 0;
     private static double smoothRightY = 0;
 
-    // Configurações ajustáveis
     private const int mouseDeadzonePixels = 3;
-    private const double sensitivityMultiplier = 300.0;
+    private const double sensitivityMultiplier = 10000.0;
     private const double smoothingFactor = 0.3;
     private const int updateDelayMs = 2;
     private const short moveSpeed = 32767;
 
-    [DllImport("user32.dll")]
-    static extern bool GetCursorPos(out Point lpPoint);
+    private static Point? enemyPosition = new Point(
+        Screen.PrimaryScreen.Bounds.Width / 2 + 100,
+        Screen.PrimaryScreen.Bounds.Height / 2 - 50
+    );
+    private const int aimAssistRadius = 100;
+    private const double aimAssistStrength = 0.5;
 
-    [DllImport("user32.dll")]
-    static extern bool SetCursorPos(int X, int Y);
+    private static DateTime lastActionTime = DateTime.MinValue;
+    private static readonly TimeSpan debounceDuration = TimeSpan.FromMilliseconds(100);
 
-    [DllImport("user32.dll")]
-    private static extern short GetAsyncKeyState(Keys vKey);
+    [DllImport("user32.dll")] static extern bool GetCursorPos(out Point lpPoint);
+    [DllImport("user32.dll")] static extern bool SetCursorPos(int X, int Y);
+    [DllImport("user32.dll")] static extern short GetAsyncKeyState(Keys vKey);
 
     static void Main()
     {
@@ -41,17 +44,18 @@ class Program
         controller = client.CreateXbox360Controller();
         controller.Connect();
 
-        // Inicializa posição do cursor no centro da tela
         fixedCursorPosition = new Point(
             Screen.PrimaryScreen.Bounds.Width / 2,
             Screen.PrimaryScreen.Bounds.Height / 2
         );
+
         SetCursorPos(fixedCursorPosition.X, fixedCursorPosition.Y);
+        Cursor.Hide();
 
         Console.WriteLine("Controle virtual iniciado.");
-        Console.WriteLine("Mouse = analógico direito | WASD = andar | INSERT = sair");
+        Console.WriteLine("Mouse = analógico direito + aim assist");
+        Console.WriteLine("Botão esquerdo = atirar | Botão direito = mirar | INSERT = sair");
 
-        // Configura hook para cliques do mouse
         hook = new SimpleGlobalHook();
         hook.MousePressed += OnMousePressed;
         hook.MouseReleased += OnMouseReleased;
@@ -64,6 +68,7 @@ class Program
 
             AtualizarAnalogicoDireitoComMouse();
             AtualizarAnalogicoEsquerdoComTeclado();
+            AtualizarAcoesComTeclado();
 
             controller!.SubmitReport();
             Thread.Sleep(updateDelayMs);
@@ -71,25 +76,30 @@ class Program
 
         controller.Disconnect();
         client.Dispose();
+        Cursor.Show();
     }
-
-    static Point previousMousePos = Point.Empty;
 
     private static void AtualizarAnalogicoDireitoComMouse()
     {
         GetCursorPos(out Point currentPos);
 
-        if (previousMousePos == Point.Empty)
-            previousMousePos = currentPos;
-
-        int deltaX = currentPos.X - previousMousePos.X;
-        int deltaY = currentPos.Y - previousMousePos.Y;
+        int deltaX = currentPos.X - fixedCursorPosition.X;
+        int deltaY = currentPos.Y - fixedCursorPosition.Y;
 
         if (Math.Abs(deltaX) < mouseDeadzonePixels) deltaX = 0;
         if (Math.Abs(deltaY) < mouseDeadzonePixels) deltaY = 0;
 
         double targetX = deltaX * sensitivityMultiplier;
         double targetY = -deltaY * sensitivityMultiplier;
+
+        if (enemyPosition != null && DentroDaAreaAssistida(currentPos, enemyPosition.Value))
+        {
+            int assistX = enemyPosition.Value.X - currentPos.X;
+            int assistY = enemyPosition.Value.Y - currentPos.Y;
+
+            targetX += assistX * aimAssistStrength;
+            targetY -= assistY * aimAssistStrength;
+        }
 
         smoothRightX = Lerp(smoothRightX, targetX, smoothingFactor);
         smoothRightY = Lerp(smoothRightY, targetY, smoothingFactor);
@@ -100,44 +110,62 @@ class Program
         controller!.SetAxisValue(Xbox360Axis.RightThumbX, stickX);
         controller.SetAxisValue(Xbox360Axis.RightThumbY, stickY);
 
-        previousMousePos = currentPos;
+        SetCursorPos(fixedCursorPosition.X, fixedCursorPosition.Y);
     }
 
     private static void AtualizarAnalogicoEsquerdoComTeclado()
     {
-        short x = 0;
-        short y = 0;
+        short x = 0, y = 0;
 
-        if (TeclaPressionada(Keys.W))
-            y = moveSpeed;
-        else if (TeclaPressionada(Keys.S))
-            y = (short)-moveSpeed;
-
-        if (TeclaPressionada(Keys.A))
-            x = (short)-moveSpeed;
-        else if (TeclaPressionada(Keys.D))
-            x = moveSpeed;
+        if (TeclaPressionada(Keys.W)) y = moveSpeed;
+        else if (TeclaPressionada(Keys.S)) y = (short)-moveSpeed;
+        if (TeclaPressionada(Keys.A)) x = (short)-moveSpeed;
+        else if (TeclaPressionada(Keys.D)) x = moveSpeed;
 
         controller!.SetAxisValue(Xbox360Axis.LeftThumbX, x);
         controller.SetAxisValue(Xbox360Axis.LeftThumbY, y);
     }
 
-    private static bool TeclaPressionada(Keys key)
+    private static void AtualizarAcoesComTeclado()
     {
-        return (GetAsyncKeyState(key) & 0x8000) != 0;
+        controller!.SetButtonState(Xbox360Button.Y, TeclaPressionada(Keys.Space));
+        controller.SetButtonState(Xbox360Button.X, TeclaPressionada(Keys.ControlKey));
+    }
+
+    private static bool TeclaPressionada(Keys key) =>
+        (GetAsyncKeyState(key) & 0x8000) != 0;
+
+    private static bool DentroDaAreaAssistida(Point cursor, Point target)
+    {
+        int dx = cursor.X - target.X;
+        int dy = cursor.Y - target.Y;
+        double distance = Math.Sqrt(dx * dx + dy * dy);
+        return distance < aimAssistRadius;
+    }
+
+    private static double Lerp(double a, double b, double t) => a + (b - a) * t;
+
+    private static bool PodeExecutarAcao()
+    {
+        if (DateTime.Now - lastActionTime > debounceDuration)
+        {
+            lastActionTime = DateTime.Now;
+            return true;
+        }
+        return false;
     }
 
     private static void OnMousePressed(object? sender, MouseHookEventArgs e)
     {
-        if (controller == null) return;
+        if (controller == null || !PodeExecutarAcao()) return;
 
         switch (e.Data.Button)
         {
-            case MouseButton.Button1: // Botão esquerdo
-                controller.SetButtonState(Xbox360Button.A, true);
+            case MouseButton.Button1: // Clique esquerdo → RT (atirar)
+                controller.SetSliderValue(Xbox360Slider.RightTrigger, 255);
                 break;
-            case MouseButton.Button2: // Botão direito
-                controller.SetButtonState(Xbox360Button.B, true);
+            case MouseButton.Button2: // Clique direito → LT (mirar)
+                controller.SetSliderValue(Xbox360Slider.LeftTrigger, 255);
                 break;
         }
     }
@@ -149,17 +177,11 @@ class Program
         switch (e.Data.Button)
         {
             case MouseButton.Button1:
-                controller.SetButtonState(Xbox360Button.A, false);
+                controller.SetSliderValue(Xbox360Slider.RightTrigger, 0);
                 break;
             case MouseButton.Button2:
-                controller.SetButtonState(Xbox360Button.B, false);
+                controller.SetSliderValue(Xbox360Slider.LeftTrigger, 0);
                 break;
         }
     }
-
-    private static double Lerp(double start, double end, double amount)
-    {
-        return start + (end - start) * amount;
-    }
 }
-
