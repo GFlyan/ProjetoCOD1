@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "Bt4fcGHiu1Y=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\jpara\\OneDrive\\Documentos\\GitHub\\ProjetoCOD1\\ProjetoCOD1.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\jpara\\.nuget\\packages\\nefarius.vigem.client\\1.21.256\\nefarius.vigem.client.1.21.256.nupkg.sha512",
+    "C:\\Users\\jpara\\.nuget\\packages\\sharphook\\6.2.0\\sharphook.6.2.0.nupkg.sha512"
+  ],
+  "logs": []
+}
