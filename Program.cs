@@ -103,8 +103,6 @@ class Program
         previousMousePos = currentPos;
     }
 
-
-
     private static void AtualizarAnalogicoEsquerdoComTeclado()
     {
         short x = 0;
@@ -164,3 +162,4 @@ class Program
         return start + (end - start) * amount;
     }
 }
+
