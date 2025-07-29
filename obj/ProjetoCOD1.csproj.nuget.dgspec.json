@@ -56,6 +56,10 @@
             "SharpHook": {
               "target": "Package",
               "version": "[6.2.0, )"
+            },
+            "SharpHook.Reactive": {
+              "target": "Package",
+              "version": "[6.2.0, )"
             }
           },
           "imports": [

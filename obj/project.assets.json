@@ -65,6 +65,39 @@
             "rid": "win-x86"
           }
         }
+      },
+      "SharpHook.Reactive/6.2.0": {
+        "type": "package",
+        "dependencies": {
+          "SharpHook": "6.2.0",
+          "System.Reactive": "6.0.1"
+        },
+        "compile": {
+          "lib/net8.0/SharpHook.Reactive.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/SharpHook.Reactive.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "System.Reactive/6.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/System.Reactive.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/System.Reactive.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
+        }
       }
     }
   },
@@ -117,12 +150,66 @@
         "sharphook.6.2.0.nupkg.sha512",
         "sharphook.nuspec"
       ]
+    },
+    "SharpHook.Reactive/6.2.0": {
+      "sha512": "roEcEBFlv3UJNfzPua6+O6QdZ3LL+W9DNa48YKPC6NR3hqod5fe3G0U3cUgOaJFWoho6KoEYjOAcj7V/9+MctQ==",
+      "type": "package",
+      "path": "sharphook.reactive/6.2.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "icon.png",
+        "lib/net472/SharpHook.Reactive.dll",
+        "lib/net472/SharpHook.Reactive.xml",
+        "lib/net8.0-maccatalyst18.0/SharpHook.Reactive.dll",
+        "lib/net8.0-maccatalyst18.0/SharpHook.Reactive.xml",
+        "lib/net8.0/SharpHook.Reactive.dll",
+        "lib/net8.0/SharpHook.Reactive.xml",
+        "lib/net9.0-maccatalyst18.0/SharpHook.Reactive.dll",
+        "lib/net9.0-maccatalyst18.0/SharpHook.Reactive.xml",
+        "lib/net9.0/SharpHook.Reactive.dll",
+        "lib/net9.0/SharpHook.Reactive.xml",
+        "lib/netstandard2.0/SharpHook.Reactive.dll",
+        "lib/netstandard2.0/SharpHook.Reactive.xml",
+        "sharphook.reactive.6.2.0.nupkg.sha512",
+        "sharphook.reactive.nuspec"
+      ]
+    },
+    "System.Reactive/6.0.1": {
+      "sha512": "rHaWtKDwCi9qJ3ObKo8LHPMuuwv33YbmQi7TcUK1C264V3MFnOr5Im7QgCTdLniztP3GJyeiSg5x8NqYJFqRmg==",
+      "type": "package",
+      "path": "system.reactive/6.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "build/net6.0-windows10.0.19041/_._",
+        "build/net6.0/_._",
+        "buildTransitive/net6.0-windows10.0.19041/_._",
+        "buildTransitive/net6.0/_._",
+        "icon.png",
+        "lib/net472/System.Reactive.dll",
+        "lib/net472/System.Reactive.xml",
+        "lib/net6.0-windows10.0.19041/System.Reactive.dll",
+        "lib/net6.0-windows10.0.19041/System.Reactive.xml",
+        "lib/net6.0/System.Reactive.dll",
+        "lib/net6.0/System.Reactive.xml",
+        "lib/netstandard2.0/System.Reactive.dll",
+        "lib/netstandard2.0/System.Reactive.xml",
+        "lib/uap10.0.18362/System.Reactive.dll",
+        "lib/uap10.0.18362/System.Reactive.pri",
+        "lib/uap10.0.18362/System.Reactive.xml",
+        "readme.md",
+        "system.reactive.6.0.1.nupkg.sha512",
+        "system.reactive.nuspec"
+      ]
     }
   },
   "projectFileDependencyGroups": {
     "net8.0-windows7.0": [
       "Nefarius.ViGEm.Client >= 1.21.256",
-      "SharpHook >= 6.2.0"
+      "SharpHook >= 6.2.0",
+      "SharpHook.Reactive >= 6.2.0"
     ]
   },
   "packageFolders": {
@@ -179,6 +266,10 @@
             "version": "[1.21.256, )"
           },
           "SharpHook": {
+            "target": "Package",
+            "version": "[6.2.0, )"
+          },
+          "SharpHook.Reactive": {
             "target": "Package",
             "version": "[6.2.0, )"
           }
