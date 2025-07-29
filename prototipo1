@@ -1,0 +1,127 @@
+using Nefarius.ViGEm.Client;
+using Nefarius.ViGEm.Client.Targets;
+using Nefarius.ViGEm.Client.Targets.Xbox360;
+using System;
+using System.Drawing;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Windows.Forms;
+
+class Program
+{
+    private static IXbox360Controller? controller;
+    private static Point fixedCursorPosition;
+
+    // CONFIGURAÇÕES QUE VOCÊ PODE ALTERAR PARA TESTAR:
+    private const int mouseDeadzonePixels = 3; // Aumente para ignorar pequenos tremores do mouse (ex: 1, 2, 3)
+    private const double sensitivityMultiplier = 300.0; // Multiplicador da sensibilidade do movimento do mouse (ex: 500 a 3000)
+    private const double smoothingFactor = 0.3; // Fator de suavização (0 = sem suavização, 1 = movimento instantâneo)
+    private const int updateDelayMs = 2; // Delay do loop principal em milissegundos (ex: 2, 3, 5)
+
+    private const short moveSpeed = 32767; // Velocidade do analógico esquerdo para WASD (normalmente máximo)
+
+    // Variáveis internas para suavização do analógico direito
+    private static double smoothRightX = 0;
+    private static double smoothRightY = 0;
+
+    [DllImport("user32.dll")]
+    static extern bool GetCursorPos(out Point lpPoint);
+
+    [DllImport("user32.dll")]
+    static extern bool SetCursorPos(int X, int Y);
+
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(Keys vKey);
+
+    static void Main()
+    {
+        var client = new ViGEmClient();
+        controller = client.CreateXbox360Controller();
+        controller.Connect();
+
+        fixedCursorPosition = new Point(
+            Screen.PrimaryScreen.Bounds.Width / 2,
+            Screen.PrimaryScreen.Bounds.Height / 2
+        );
+        SetCursorPos(fixedCursorPosition.X, fixedCursorPosition.Y);
+
+        Console.WriteLine("Controle virtual iniciado.");
+        Console.WriteLine("Use mouse para mirar (cursor preso no centro), WASD para andar, INSERT para sair.");
+
+        while (true)
+        {
+            if ((GetAsyncKeyState(Keys.Insert) & 0x8000) != 0)
+                break;
+
+            AtualizarAnalogicoDireitoComMouse();
+            AtualizarAnalogicoEsquerdoComTeclado();
+
+            controller!.SubmitReport();
+
+            Thread.Sleep(updateDelayMs);
+        }
+
+        controller.Disconnect();
+        client.Dispose();
+    }
+
+    private static void AtualizarAnalogicoDireitoComMouse()
+    {
+        GetCursorPos(out Point currentPos);
+
+        int deltaX = currentPos.X - fixedCursorPosition.X;
+        int deltaY = currentPos.Y - fixedCursorPosition.Y;
+
+        // Aplica deadzone para ignorar pequenos movimentos que causam jitter
+        if (Math.Abs(deltaX) < mouseDeadzonePixels) deltaX = 0;
+        if (Math.Abs(deltaY) < mouseDeadzonePixels) deltaY = 0;
+
+        // Calcula posição alvo do analógico direito (multiplicador * delta do mouse)
+        double targetX = deltaX * sensitivityMultiplier;
+        double targetY = -deltaY * sensitivityMultiplier; // Y invertido para controle
+
+        // Aplica suavização para deixar o movimento mais fluido
+        smoothRightX = Lerp(smoothRightX, targetX, smoothingFactor);
+        smoothRightY = Lerp(smoothRightY, targetY, smoothingFactor);
+
+        // Limita valores ao intervalo do analógico
+        short stickX = (short)Math.Clamp(smoothRightX, -32767, 32767);
+        short stickY = (short)Math.Clamp(smoothRightY, -32767, 32767);
+
+        controller!.SetAxisValue(Xbox360Axis.RightThumbX, stickX);
+        controller.SetAxisValue(Xbox360Axis.RightThumbY, stickY);
+
+        // Reseta o cursor para o centro da tela para captar próximo delta corretamente
+        if (deltaX != 0 || deltaY != 0)
+            SetCursorPos(fixedCursorPosition.X, fixedCursorPosition.Y);
+    }
+
+    private static void AtualizarAnalogicoEsquerdoComTeclado()
+    {
+        short x = 0;
+        short y = 0;
+
+        if (TeclaPressionada(Keys.W))
+            y = moveSpeed;
+        else if (TeclaPressionada(Keys.S))
+            y = (short)(-moveSpeed);
+
+        if (TeclaPressionada(Keys.A))
+            x = (short)(-moveSpeed);
+        else if (TeclaPressionada(Keys.D))
+            x = moveSpeed;
+
+        controller!.SetAxisValue(Xbox360Axis.LeftThumbX, x);
+        controller.SetAxisValue(Xbox360Axis.LeftThumbY, y);
+    }
+
+    private static bool TeclaPressionada(Keys key)
+    {
+        return (GetAsyncKeyState(key) & 0x8000) != 0;
+    }
+
+    private static double Lerp(double start, double end, double amount)
+    {
+        return start + (end - start) * amount;
+    }
+}
